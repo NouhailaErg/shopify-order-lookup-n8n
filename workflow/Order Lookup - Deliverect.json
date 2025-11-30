@@ -1,0 +1,290 @@
+{
+  "name": "Order Lookup - Deliverect",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "order-lookup",
+        "authentication": "basicAuth",
+        "options": {}
+      },
+      "id": "3eb38133-63da-4d70-8e0a-5d0843418571",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        528
+      ],
+      "webhookId": "1c1b8c88-2ee6-4d6c-945b-2ea14de95e8d",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "bIYpDhoj388fY3Ia",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "operation": "getAll",
+        "options": {
+          "status": "any"
+        }
+      },
+      "type": "n8n-nodes-base.shopify",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        432
+      ],
+      "id": "b37a6709-e1d6-4a82-8f5d-25f387ef165d",
+      "name": "Get many orders",
+      "credentials": {
+        "shopifyAccessTokenApi": {
+          "id": "pXwxscDtg7iPpjOm",
+          "name": "Shopify Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -368,
+        624
+      ],
+      "id": "800e3f5f-ca45-49f8-a105-df7511cc0978",
+      "name": "Missing ID Response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c7762670-8a90-4f22-9b1d-4ea881ae8847",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": true,
+              "operator": {
+                "type": "number",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -160,
+        432
+      ],
+      "id": "cf199ced-2180-4ec6-b021-1685debe5e91",
+      "name": "Order Exists?",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const order = $input.item.json;\n\n// Check if order has line_items (order found case)\nif (order.line_items && Array.isArray(order.line_items)) {\n  const itemNames = order.line_items.map(item => item.name).join(\", \");\n  const totalPrice = order.total_price || \"0.00\";\n  const status = order.fulfillment_status || \"unknown\";\n\n  const responseText = `Item Names: ${itemNames}, Price: ${totalPrice}, Status: ${status}`;\n\n  return [{\n    json: {\n      body: responseText\n    }\n  }];\n} else {\n  // Order not found case\n  return [{\n    json: {\n      body: \"Order not found. Please check the Order ID.\"\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        416
+      ],
+      "id": "cc01df40-d2c1-43af-b89d-02cf44969856",
+      "name": "Format Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    message: \"Invalid Order ID. Please enter a valid order number.\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        624
+      ],
+      "id": "c70fe090-f1e9-4d1a-9bb3-ebfbba3455b8",
+      "name": "Invalid Order ID"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        288,
+        416
+      ],
+      "id": "9cbc2ccf-2282-464c-a1fc-a794efcf77ee",
+      "name": "Order Information"
+    },
+    {
+      "parameters": {
+        "jsCode": "const orderId = $('Webhook Trigger').first().json.body.orderId;\nconst cleanId = String(orderId).replace('#','').trim();\n\nconst orders = $input.all();\n\nconst matches = orders.filter(o => {\n  const order = o.json;\n\n  const numMatch = String(order.order_number) === cleanId;\n  const nameMatch = order.name && String(order.name).replace('#','') === cleanId;\n\n  return numMatch || nameMatch;\n});\n\n// Order exists\nif (matches.length > 0) {\n  return matches;\n}\n\n// Order does NOT exist\nreturn [{\n  json: { found: false }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        432
+      ],
+      "id": "23c79cd0-083b-4ed6-b105-ca6f47274610",
+      "name": "Filter Orders",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "157b667e-8f2d-41c6-9ed9-91759bd0c4f1",
+              "leftValue": "={{ $json.body.orderId }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -816,
+        528
+      ],
+      "id": "42af2b5f-53ed-4787-b0a4-11a89a7a4a74",
+      "name": "Validate Order ID"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Order ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many orders": {
+      "main": [
+        [
+          {
+            "node": "Filter Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Output": {
+      "main": [
+        [
+          {
+            "node": "Order Information",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invalid Order ID": {
+      "main": [
+        [
+          {
+            "node": "Missing ID Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Orders": {
+      "main": [
+        [
+          {
+            "node": "Order Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Exists?": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Validate Order ID": {
+      "main": [
+        [
+          {
+            "node": "Get many orders",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Order ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b4c49821-608b-471e-9dc3-4d644c1be91d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "685209b9cfdc329a173fbdd4f3f0e48628c4385cb20ffb3ccec2a4348bda5111"
+  },
+  "id": "TpYq0eED1gm8tx3S",
+  "tags": []
+}
