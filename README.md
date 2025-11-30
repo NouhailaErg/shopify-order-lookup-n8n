@@ -46,7 +46,7 @@ Invalid Order ID. Please enter a valid order number.
 🔒Data Security Measures:
 🔐Basic authentication on Webhook
 🧽Strict input validation to block malformed requests
-🚫No personal customer information shared — only order basics
+🚫No personal customer information shared only order basics
 🔏Shopify credentials stored securely in n8n
 📉No logs containing sensitive raw webhooks
 
