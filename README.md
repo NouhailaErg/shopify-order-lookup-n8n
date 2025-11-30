@@ -1,4 +1,5 @@
 🚀Overview
+
 This workflow allows a support chatbot to instantly retrieve order information from Shopify using only an order number. It replaces a slow or inconsistent manual lookup process and avoids delays. and returns a clean, human‑readable response containing:
 🛍️Item names
 💵Total price
@@ -7,6 +8,7 @@ This workflow allows a support chatbot to instantly retrieve order information f
 Everything is formatted as raw text, ready for direct chatbot replies.
 
 🤖When the Chatbot Should Trigger This Workflow?
+
 Your chatbot calls the workflow when:
 A customer asks “Where is my order?”
 A user provides an order number (e.g. 1001)
@@ -18,11 +20,13 @@ The chatbot sends a simple POST request containing:
 }
 
 🔧How the Workflow Operates?
+
 Secure Webhook Trigger
 Accepts POST requests
 Protected with basic authentication
 
 🧹Input Validation
+
 Rejects missing or invalid IDs
 Returns a friendly error message
 Fetches All Shopify Orders
@@ -31,6 +35,7 @@ Filters For the Matching Order
 Handles “#1001” formatting issues automatically
 
 ✍️Formats the Final Output:
+
 Sends Clean Text Back to Webhook Caller
 
 Sample Output
@@ -44,6 +49,7 @@ Order not found. Please check the Order ID.
 Invalid Order ID. Please enter a valid order number.
 
 🔒Data Security Measures:
+
 🔐Basic authentication on Webhook
 🧽Strict input validation to block malformed requests
 🚫No personal customer information shared only order basics
@@ -51,4 +57,5 @@ Invalid Order ID. Please enter a valid order number.
 📉No logs containing sensitive raw webhooks
 
 🎯Summary
+
 This automation gives support agents and chatbots a fast, reliable way to check Shopify orders without navigating the dashboard. It reduces delays, prevents manual lookup errors, and improves customer response time.
